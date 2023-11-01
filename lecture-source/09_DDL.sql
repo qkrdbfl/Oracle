@@ -1,0 +1,189 @@
+-- 09_DDL(Data Definition Language)
+
+--ALTER : 객체를 수정하는 구문
+--테이블 객체 수정 시 ALTER TABLE 테이블명 수정할 내용; < 문법
+
+-- 컬럼 추가
+SELECT
+        DC.*
+   FROM DEPT_COPY DC;   
+
+ALTER TABLE DEPT_COPY
+ADD (LNAME VARCHAR2(20));
+
+-- 컬럼 삭제
+ALTER TABLE DEPT_COPY
+DROP COLUMN LNAME;
+
+SELECT
+        DC.*
+   FROM DEPT_COPY DC;  
+
+-- 컬럼 생성시 DEFAULT(디폴트) 값 지정
+ALTER TABLE DEPT_COPY
+ADD (CNAME VARCHAR2(20) DEFAULT '한국');
+
+SELECT
+        DC.*
+   FROM DEPT_COPY DC; 
+
+-- 제약 조건 추가
+CREATE TABLE DEPT_COPY2
+AS
+SELECT D.*
+  FROM DEPARTMENT D;
+
+-- PK 제약조건 추가
+ALTER TABLE DEPT_COPY2
+ADD CONSTRAINT PK_DEPT_ID2 PRIMARY KEY(DEPT_ID);
+
+-- UNIQUE 제약 조건 추가
+ALTER TABLE DEPT_COPY2
+ADD CONSTRAINT UN_DEPT_TITLE2 UNIQUE(DEPT_TITLE);
+
+-- NOT NULL 제약 조건 추가
+-- !** ADD 가 아닌 MODIFY 를 사용 **
+-- NOT NULL에서 NULL로 NULL에서 NOT NULL로 왓다갔다 변경 가능
+ALTER TABLE DEPT_COPY2
+MODIFY DEPT_TITLE CONSTRAINT NN_DEPT_TITLE2 NOT NULL;
+
+--  컬럼 자료형 수정
+ALTER TABLE DEPT_COPY2
+MODIFY DEPT_ID CHAR(3)
+MODIFY DEPT_TITLE VARCHAR2(20)
+MODIFY LOCATION_ID VARCHAR2(2);
+
+--다르게 변경해보자
+-- !컬럼의 크기를 줄이는 경우 변경하려는 크기를 초과하는 컬럼 값이 없을 때만 변경할 수 있다.
+-- 이미 있는 데이터 길이가 9라서 10은 (일부 값이 너무 커서 열 길이를 줄일 수 없음) 라는 에러남
+ALTER TABLE DEPT_COPY2 -- 만들어져 있는 데이터를 고려해서 해야함
+MODIFY DEPT_TITLE VARCHAR2(10);
+
+-- DEFAULT 값 변경
+-- 현재 값은 아직 안바뀜 인서트 후 부터임
+ALTER TABLE DEPT_COPY
+MODIFY CNAME DEFAULT '미국';-- 디폴트값 미국으로 변경하기
+
+INSERT
+  INTO DEPT_COPY
+VALUES
+(
+  'DO'
+, '생산부'
+, 'L2'
+,  DEFAULT
+); -- D0 생산부의 L2 미국 새로 생김
+
+SELECT
+        DC.*
+   FROM DEPT_COPY DC;-- 확인
+
+-- 컬럼 삭제
+ALTER TABLE DEPT_COPY2
+DROP COLUMN DEPT_TITLE;
+
+ALTER TABLE DEPT_COPY2
+DROP COLUMN DEPT_ID;
+
+-- 테이블에 최소 한개 이상의 컬럼이 남아있아야 삭제 가능
+-- 테이블에 모든 열들을 삭제할순 없는 오류가 남
+ALTER TABLE DEPT_COPY2
+DROP COLUMN LOCATION_ID;
+
+-- 제약 조건이 있는 컬럼 삭제
+CREATE TABLE TB1( -- 테이블 생성
+  PK NUMBER PRIMARY KEY,
+  FK NUMBER REFERENCES TB1,-- 앞에 FK는 PK를 참조한다는 뜻 
+  COL1 NUMBER,
+  CHECK(PK > 0 AND COL1 > 0)
+);
+-- PK(컬럼)를 삭제해보자 -- 제약조건이 있음
+-- 컬럼 삭제 시 참조 하고 있는 컬럼이 있다면 삭제 불가
+ALTER TABLE TB1
+DROP COLUMN PK; -- 부모키를 삭제할수 없다는 오류
+
+-- 제약 조건을 함께 제거하는 구문을 사용하면 삭제 가능 구문
+ALTER TABLE TB1 --문법
+DROP COLUMN PK CASCADE CONSTRAINTS;-- 삭제됨
+
+SELECT
+        T.*
+   FROM TB1 T; --확인 PK 라는 컬럼이 잘 삭제됨 
+   
+   
+-- 제약조건을 삭제하기  
+-- 제약 조건이 걸린 CONST_EMP 테이블 생성
+CREATE TABLE CONST_EMP (
+    ENAME VARCHAR2(20) NOT NULL,
+    ENO VARCHAR2(15) NOT NULL,
+    MARRIAGE CHAR(1) DEFAULT 'N',
+    EID CHAR(3),
+    EMAIL VARCHAR2(30),
+    JID CHAR(2),
+    MID CHAR(3),
+    DID CHAR(2),
+-- 테이블 레벨로 제약 조건 설정
+    CONSTRAINT CK_MARRIAGE CHECK(MARRIAGE IN('Y', 'N')),
+    CONSTRAINT PK_EID PRIMARY KEY(EID),
+    CONSTRAINT UN_ENO UNIQUE(ENO),
+    CONSTRAINT UN_EMAIL UNIQUE(EMAIL),
+    CONSTRAINT FK_JID FOREIGN KEY(JID) REFERENCES JOB(JOB_CODE) ON DELETE SET NULL,
+    CONSTRAINT FK_MID FOREIGN KEY(MID) REFERENCES CONST_EMP ON DELETE SET NULL,
+    CONSTRAINT FK_DID FOREIGN KEY(DID) REFERENCES DEPARTMENT ON DELETE CASCADE
+);
+
+-- 제약조건 1개 삭제 시
+ALTER TABLE CONST_EMP
+DROP CONSTRAINT CK_MARRIAGE;
+
+-- 제약 조건 여러개 삭제 시
+ALTER TABLE CONST_EMP
+DROP CONSTRAINT FK_JID
+DROP CONSTRAINT FK_MID
+DROP CONSTRAINT FK_DID;
+
+-- NOT NULL 제약조건은 삭제 시에도 * MODIFY * 사용 --문법
+ALTER TABLE CONST_EMP
+MODIFY (ENAME NULL, ENO NULL); --MODIFY(컬럼명 NULL, 컬럼명 NULL);
+
+-- 이름 변경 --
+--[컬럼명 변경]
+-- ALTER TABLE 테이블명 RENAME COLUMN 기존컬럼명 TO 변경컬럼명; 
+CREATE TABLE DEPT_COPY3
+AS SELECT * FROM DEPARTMENT;
+
+SELECT
+        DC.*
+   FROM DEPT_COPY3 DC;-- 확인
+   
+-- DEPT_CODE로 컬럼명 바꿔보기
+ALTER TABLE DEPT_COPY3
+RENAME COLUMN DEPT_ID TO DEPT_CODE;-- RENAME 사용
+
+-- [제약조건명 변경]
+ALTER TABLE DEPT_COPY3
+ADD CONSTRAINT PK_DEPT_CODE3 PRIMARY KEY(DEPT_CODE);
+
+ALTER TABLE DEPT_COPY3
+RENAME CONSTRAINT PK_DEPT_CODE3 TO PK_DCODE; --CONSTRAINT 사용
+
+-- [테이블명 변경]
+ALTER TABLE DEPT_COPY3
+RENAME TO DEPT_TEST; -- DEPT_TEST로 바꿈
+
+SELECT
+        DC.*
+   FROM DEPT_COPY3 DC; -- 더이상 DEPT_COPY3로 검색해도 이름을 바꿔서 존재하지 않다는 오류남
+
+SELECT
+        DT.*
+   FROM DEPT_TEST DT; -- 변경 했기 때문에 잘 뜸
+
+-- [테이블 삭제]
+-- DROP TABLE 테이블명 [CASCADE CONSTRAINTS];
+-- 부모(참조 컬럼) 땜에 삭제 못한다고 하는 오류가 있을 수 있을수 있어서 뒤에  [CASCADE CONSTRAINTS]; 를 붙여줌
+DROP TABLE DEPT_TEST CASCADE CONSTRAINTS;
+
+SELECT
+        DT.*
+    ROM DEPT_TEST DT; -- 삭제 되어서 검색 안됨

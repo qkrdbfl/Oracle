@@ -1,0 +1,67 @@
+-- 11_SEQUENCE
+
+-- 시퀀스 객체 생성
+CREATE SEQUENCE SEQ_EMPID
+START WITH 300
+INCREMENT BY 5
+MAXVALUE 310
+NOCYCLE
+NOCACHE;
+
+-- 시퀀스명.CURRVAL : CURRENT VALUE(현재 값) 반환
+-- 시퀀스명.NEXTVAL : NEXT VALUE(다음 값) 반환
+
+-- NEXTVAL를 1회 수행해야 CURRVAL를 알 수 있다.
+SELECT SEQ_EMPID.CURRVAL FROM DUAL; --이것만 먼저 실행하려고 하면 오류남 아래 구문을 먼저 실행허고 나서 하기
+
+SELECT SEQ_EMPID.NEXTVAL FROM DUAL; -- 300
+SELECT SEQ_EMPID.CURRVAL FROM DUAL; -- 300 --현재 값을 확인 CURRVAL
+SELECT SEQ_EMPID.CURRVAL FROM DUAL; -- 305
+SELECT SEQ_EMPID.NEXTVAL FROM DUAL; -- 310
+SELECT SEQ_EMPID.CURRVAL FROM DUAL; -- 310
+-- maxvalue를 넘어서면 에러발생
+SELECT SEQ_EMPID.NEXTVAL FROM DUAL; -- 오류 : (MAXVALUE은 사례로 될 수 없습니다)
+
+-- 데이터 딕셔너리 USER_SEQUENCES를 통한 조회
+SELECT * FROM USER_SEQUENCES; -- 현재 계정이 가지고 있는 시퀀스가 목록에 조회됨
+
+-- 시퀀스 변경 
+-- START WITH 값은 변경 불가하므로 해당 값 변경은 DROP로 삭제 후 다시 생성
+ALTER SEQUENCE SEQ_EMPID
+INCREMENT BY 10 --증가값이 10으로 바뀜
+MAXVALUE 400 -- 맥스값은 400으로 늘음
+NOCYCLE
+NOCACHE;
+
+--번호 발생 시키기
+SELECT SEQ_EMPID.NEXTVAL FROM DUAL; --320
+SELECT SEQ_EMPID.CURRVAL FROM DUAL; -- 320
+SELECT SEQ_EMPID.NEXTVAL FROM DUAL; -- 330
+SELECT SEQ_EMPID.CURRVAL FROM DUAL; -- 330
+
+-- 시퀀스 객체를 가장 많이 사용하는 용도는 테이블의 인위적인 식별자(PK)로 사용하는 것이다.
+CREATE SEQUENCE SEQ_EID
+START WITH 300 -- 300에서 시작
+INCREMENT BY 1 -- 1씩 증가
+MAXVALUE 10000
+NOCYCLE
+NOCACHE;
+
+--INSERT시 PK 값에 시퀀스 활용
+INSERT
+  INTO EMPLOYEE
+VALUES
+( -- SEQ_EID.NEXTVAL를 pk 용도로 사용한것
+  SEQ_EID.NEXTVAL, '홍길동', '660101-1111111', 'hong_gd@greedy.com', '01012345678',
+  'D2', 'J7', 'S1', 5000000, 0.1, 200, SYSDATE, NULL, DEFAULT
+); -- 테이블안의 컬럼내용 순서대로 적은것
+
+SELECT
+        E.*
+   FROM EMPLOYEE E; -- 위 홍길동이 들어간걸 조회 확인 가능
+
+ROLLBACK; --길동형 다시 돌아가
+
+
+-- 시퀀스 삭제 --
+DROP SEQUENCE SEQ_EMPID;
